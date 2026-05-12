@@ -1,0 +1,77 @@
+name: Deploy DEV
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+      SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+      SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install Snowflake CLI
+        run: |
+          pip install snowflake-cli-labs
+
+      - name: Install dbt
+        run: |
+          pip install dbt-snowflake
+
+      - name: Create RSA Key File
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" > ~/.ssh/rsa_key.p8
+          chmod 600 ~/.ssh/rsa_key.p8
+
+      - name: Create Snowflake Config
+        run: |
+          mkdir -p ~/.snowflake
+
+          cat > ~/.snowflake/config.toml <<EOF
+          [connections.dev]
+          account = "${SNOWFLAKE_ACCOUNT}"
+          user = "${SNOWFLAKE_USER}"
+          password = ""
+          warehouse = "${SNOWFLAKE_WAREHOUSE}"
+          database = "${SNOWFLAKE_DATABASE}"
+          schema = "${SNOWFLAKE_SCHEMA}"
+          role = "${SNOWFLAKE_ROLE}"
+          authenticator = "SNOWFLAKE_JWT"
+          private_key_path = "~/.ssh/rsa_key.p8"
+          EOF
+
+      - name: Test Snowflake Connection
+        run: |
+          snow connection test -c dev
+
+      - name: Deploy SQL Objects
+        run: |
+          snow sql -c dev -f sql/setup/schema.sql
+          snow sql -c dev -f sql/setup/tables.sql
+
+      - name: Run dbt Models
+        run: |
+          cd dbt_project
+          cd customers_analytics
+          dbt run --target dev
+          dbt test --target dev
