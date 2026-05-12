@@ -1,0 +1,5 @@
+SELECT
+    COUNTRY,
+    SUM(SALES) AS TOTAL_SALES
+FROM {{ ref('customers') }}
+GROUP BY COUNTRY

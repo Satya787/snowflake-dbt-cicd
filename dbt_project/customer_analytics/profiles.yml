@@ -1,0 +1,42 @@
+analytics_project:
+  outputs:
+    dev:
+      account: snow connection add
+      database: DEV
+      password: Satya@78730327
+      role: ACCOUNTADMIN
+      schema: ANALYTICS
+      threads: 1
+      type: snowflake
+      user: satya30
+      warehouse: DEV_WH
+  target: dev
+aws_dbt_snowflake_project:
+  outputs:
+    dev:
+      account: VYFUFNW-NW14607
+      database: AIRBNB
+      password: Satya@2003
+      role: ACCOUNTADMIN
+      schema: dbt_schema
+      threads: 1
+      type: snowflake
+      user: SATYA
+      warehouse: compute_wh
+  target: dev
+  
+customer_analytics:
+  outputs:
+    dev:
+      account: vq24160.central-india.azure
+      database: DEV_DB
+      password: Temp123@
+      role: CI_ROLE
+      schema: ANALYTICS
+      threads: 1
+      type: snowflake
+      user: CI_USER
+      warehouse: DEV_WH
+  target: dev
+
+
